@@ -1,0 +1,133 @@
+package steve.jpong.gui;
+
+import javax.swing.JFrame;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Toolkit;
+import java.awt.event.*;
+
+import steve.jpong.specs.*;
+
+public class JPong extends JFrame implements KeyListener{
+	private GameCanvas gc;
+	private int vel_x = 3;
+	private int vel_y = 3;
+	public JPong(){
+		super("Pong");
+		setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+		setLayout( new BorderLayout() );
+		setResizable(false);
+		setSize(500,500);
+		
+		getContentPane().setBackground( Color.BLACK );
+		
+		gc = new GameCanvas(this);
+		
+		add(gc, BorderLayout.CENTER);
+		addKeyListener(this);
+		
+		setVisible(true);
+	}
+	
+	public void animate(){
+		Ball InPlay = gc.getBall();
+		
+		boolean has_touched = false;
+		
+		for(Player p : gc.getPlayers()){
+			if( p != null ){
+				p.getPaddle().adjust(gc);
+			}
+		}
+		InPlay.adjust(gc);
+		repaint();
+		while(true){
+			if(touching_vert_edge(InPlay)){
+				vel_y = -vel_y;
+			}
+			if(touching_horiz_edge(InPlay) && !has_touched){
+				vel_x = -vel_x;
+			}
+			if(touching_paddle(InPlay)){
+				vel_x = -vel_x;
+			}
+			for( Player p : gc.getPlayers() ){
+				if( p != null){
+					Paddle pad = p.getPaddle();
+					pad.move( pad.getX(), pad.getY() - pad.getVelocityY() );
+				}
+			}
+			has_touched = false;
+			InPlay.move( InPlay.getX() + vel_x, InPlay.getY() - vel_y);
+			Toolkit.getDefaultToolkit().sync();
+			try{
+				Thread.sleep(25);
+			}catch(Exception e){}
+			repaint();
+		}
+	}
+	public boolean touching_paddle(Ball b){
+		for( Player p : gc.getPlayers() ){
+			if( p != null){
+				if( p.check_collisions( b ) ){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	public boolean touching_vert_edge(Ball b){
+		if( b.getY() <= 0 || b.getY() + 10 >= gc.getHeight() ){
+			return true;
+		}
+		return false;
+	}
+	public boolean touching_horiz_edge(Ball b){
+		if( b.getX() <= 0 || b.getX() + 10 >= gc.getWidth() ){
+			return true;
+		}
+		return false;
+	}
+	
+	public void keyTyped(KeyEvent evt){}
+	public void keyPressed(KeyEvent evt){
+		switch( evt.getKeyCode() ){
+		case KeyEvent.VK_UP:
+			gc.getPlayers()[0].getPaddle().setVelocityY(3);
+			break;
+		case KeyEvent.VK_DOWN:
+			gc.getPlayers()[0].getPaddle().setVelocityY(-3);
+			break;
+		case KeyEvent.VK_Q:
+			gc.getPlayers()[1].getPaddle().setVelocityY(3);
+			break;
+		case KeyEvent.VK_A:
+			gc.getPlayers()[1].getPaddle().setVelocityY(-3);
+			break;
+		default:
+			break;
+		}
+	}
+	public void keyReleased(KeyEvent evt){
+		switch( evt.getKeyCode() ){
+		case KeyEvent.VK_UP:
+			gc.getPlayers()[0].getPaddle().setVelocityY(0);
+			break;
+		case KeyEvent.VK_DOWN:
+			gc.getPlayers()[0].getPaddle().setVelocityY(0);
+			break;
+		case KeyEvent.VK_Q:
+			gc.getPlayers()[1].getPaddle().setVelocityY(0);
+			break;
+		case KeyEvent.VK_A:
+			gc.getPlayers()[1].getPaddle().setVelocityY(0);
+			break;
+		default:
+			break;
+		}
+	}
+	
+	public static void main(String[] args){
+		new JPong().animate();
+	}
+}
